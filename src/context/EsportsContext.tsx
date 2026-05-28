@@ -442,6 +442,9 @@ export const EsportsProvider: React.FC<{ children: React.ReactNode }> = ({ child
           INITIAL_ANNOUNCEMENTS.forEach((ann) => {
             batch.set(doc(db, 'announcements', ann.id), ann);
           });
+          INITIAL_WINNERS.forEach((w) => {
+            batch.set(doc(db, 'winners', w.id), w);
+          });
           batch.set(configRef, { seeded: true, seededAt: new Date().toISOString() });
           await batch.commit();
           console.log("Database seeded successfully.");
@@ -502,19 +505,8 @@ export const EsportsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       handleFirestoreError(err, OperationType.GET, 'announcements');
     });
 
-    // 5. Winners Synchronizer (with auto-seeding if empty)
+    // 5. Winners Synchronizer (Tracks live entries)
     const unsubscribeWinners = onSnapshot(collection(db, 'winners'), (snapshot) => {
-      if (snapshot.empty) {
-        console.log("Winners collection empty. Auto-seeding initial winners...");
-        const batch = writeBatch(db);
-        INITIAL_WINNERS.forEach((w) => {
-          batch.set(doc(db, 'winners', w.id), w);
-        });
-        batch.commit().catch(err => {
-          console.error("Auto seeding winners collection fails:", err);
-        });
-        return;
-      }
       const list: WinnerRecord[] = [];
       snapshot.forEach((d) => {
         list.push(d.data() as WinnerRecord);
@@ -547,12 +539,23 @@ export const EsportsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         unsubscribeUser = onSnapshot(userRef, async (snapshot) => {
           if (snapshot.exists()) {
             const data = snapshot.data() as UserProfile;
-            setUser(data);
             
             const adminEmails = [
               "krishnagameingzoneteluguff@gmail.com"
             ];
             const hasAdminEmail = u.email && adminEmails.includes(u.email);
+            
+            // Automatically upgrade outdated database entry if they have the admin email but lack the flag
+            if (hasAdminEmail && !data.isAdmin) {
+              setDoc(userRef, { isAdmin: true }, { merge: true }).catch(err => {
+                console.error("Auto upgrade admin document failed:", err);
+              });
+            }
+
+            setUser({
+              ...data,
+              isAdmin: data.isAdmin || hasAdminEmail
+            });
             setAdminMode(!!(data.isAdmin || hasAdminEmail));
           } else {
             // New user registration defaults
