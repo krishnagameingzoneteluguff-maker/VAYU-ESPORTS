@@ -1,0 +1,134 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net - Default Deny Catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == "krishnagameingzoneteluguff@gmail.com"
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 1. Tournaments Rules
+    match /tournaments/{tournamentId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(tournamentId) && (
+        incoming().title is string && incoming().title.size() <= 100 &&
+        incoming().status in ['upcoming', 'ongoing', 'completed'] &&
+        incoming().entryType is string && incoming().prizePool is string
+      );
+      allow update: if (
+        (isAdmin() && incoming().title is string) ||
+        (isSignedIn() && incoming().diff(existing()).affectedKeys().hasOnly(['slotsJoined', 'teamsJoined']))
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 2. Scrims Rules
+    match /scrims/{scrimId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(scrimId) && (
+        incoming().title is string && incoming().title.size() <= 100 &&
+        incoming().squadType in ['Solo', 'Duo', 'Squad'] &&
+        incoming().type in ['daily', 'weekend', 'practice', 'night']
+      );
+      allow update: if (
+        (isAdmin() && incoming().title is string) ||
+        (isSignedIn() && incoming().diff(existing()).affectedKeys().hasOnly(['slotsJoined', 'registeredTeams']))
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 3. Streams Rules
+    match /streams/{streamId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(streamId) && (
+        incoming().title is string && incoming().title.size() <= 100 &&
+        incoming().youtubeId is string
+      );
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // 4. Announcements Rules
+    match /announcements/{announcementId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(announcementId) && (
+        incoming().title is string && incoming().title.size() <= 100 &&
+        incoming().content is string && incoming().category in ['notice', 'update', 'rule', 'result']
+      );
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // 5. Winners Rules
+    match /winners/{winnerId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(winnerId) && (
+        incoming().tournamentName is string && incoming().tournamentName.size() <= 150 &&
+        incoming().category in ['championship', 'pro', 'elite', 'cup'] &&
+        incoming().prizeWon is string && incoming().prizeWon.size() <= 100 &&
+        incoming().completionDate is string && incoming().completionDate.size() <= 50 &&
+        incoming().championTeam is string && incoming().championTeam.size() <= 100 &&
+        incoming().runnerUpTeam is string && incoming().runnerUpTeam.size() <= 100 &&
+        incoming().teamLogoEmoji is string && incoming().teamLogoEmoji.size() <= 20 &&
+        incoming().championRoster is list && incoming().championRoster.size() <= 10 &&
+        incoming().mvpPlayer is string && incoming().mvpPlayer.size() <= 100 &&
+        incoming().mvpKills is int
+      );
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // 6. Users Rules
+    match /users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if isSignedIn() && request.auth.uid == userId && (
+        incoming().uid == userId &&
+        incoming().username is string && incoming().username.size() <= 50 &&
+        incoming().email is string &&
+        incoming().avatar is string
+      );
+      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin()) && (
+        incoming().uid == existing().uid &&
+        incoming().email == existing().email &&
+        (
+          isAdmin() ||
+          incoming().diff(existing()).affectedKeys().hasAny(['username', 'avatar', 'joinedTournaments', 'joinedScrims', 'achievements', 'level', 'wins', 'kd'])
+        )
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 6. System Configuration Rules (For checking database seeded status)
+    match /system/config {
+      allow read, write: if true;
+    }
+
+  }
+}

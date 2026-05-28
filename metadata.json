@@ -1,0 +1,6 @@
+{
+  "name": "Vayu E-Sports",
+  "description": "3D Futuristic Esports Web Platform loaded with custom tournaments, scrim blocks, live broadcast television feeds, and gladiator boards.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

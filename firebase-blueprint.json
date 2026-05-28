@@ -1,0 +1,131 @@
+{
+  "entities": {
+    "Tournament": {
+      "title": "Tournament",
+      "description": "An esports tournament event added manually by an administrator",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique tournament document ID" },
+        "title": { "type": "string", "description": "Name of the championship" },
+        "status": { "type": "string", "enum": ["upcoming", "ongoing", "completed"], "description": "Status of the tournament" },
+        "banner": { "type": "string", "description": "Badge/emoji representational graphic" },
+        "date": { "type": "string", "description": "Calendar day of kickoff" },
+        "time": { "type": "string", "description": "Wall clock kickoff slot" },
+        "slotsMax": { "type": "integer", "description": "Maximum number of allowed clans" },
+        "slotsJoined": { "type": "integer", "description": "Currently signed up team count" },
+        "entryType": { "type": "string", "description": "Enlistment requirements description" },
+        "prizePool": { "type": "string", "description": "Tournament rewards details" },
+        "teamsJoined": { "type": "array", "description": "Array list of joined team names" }
+      },
+      "required": ["id", "title", "status", "date", "time", "slotsMax", "slotsJoined", "entryType", "prizePool"]
+    },
+    "Scrim": {
+      "title": "Scrim",
+      "description": "A daily practice scrim room",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique scrim block ID" },
+        "title": { "type": "string", "description": "Title of the practice block" },
+        "squadType": { "type": "string", "enum": ["Solo", "Duo", "Squad"], "description": "Match layout scaling" },
+        "time": { "type": "string", "description": "Start clock" },
+        "slotsMax": { "type": "integer", "description": "Capacity ceiling" },
+        "slotsJoined": { "type": "integer", "description": "Secured slots count" },
+        "type": { "type": "string", "enum": ["daily", "weekend", "practice", "night"], "description": "Temporal categorization block" },
+        "isLive": { "type": "boolean", "description": "Whether the room matches are active now" },
+        "registeredTeams": { "type": "array", "description": "Clans signed up for this scrim" }
+      },
+      "required": ["id", "title", "squadType", "time", "slotsMax", "slotsJoined", "type"]
+    },
+    "Stream": {
+      "title": "Stream",
+      "description": "Live official YouTube stream transmission card",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique broadcast ID" },
+        "title": { "type": "string", "description": "Name of the live broadcast" },
+        "youtubeId": { "type": "string", "description": "Video token identifier key" },
+        "viewersCount": { "type": "integer", "description": "Mock concurrent viewer counts" },
+        "isLive": { "type": "boolean", "description": "Live flag" },
+        "thumbnail": { "type": "string", "description": "Cover asset graphic url" }
+      },
+      "required": ["id", "title", "youtubeId", "viewersCount", "isLive"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "An administrative bulletin broadcast",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique document key" },
+        "title": { "type": "string", "description": "Subject title" },
+        "date": { "type": "string", "description": "Broadcast date" },
+        "content": { "type": "string", "description": "Detailed text content of the alert" },
+        "category": { "type": "string", "enum": ["notice", "update", "rule", "result"], "description": "Topic tags" }
+      },
+      "required": ["id", "title", "date", "content", "category"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile state containing achievements and registered events",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Unique user ID" },
+        "username": { "type": "string", "description": "Display username" },
+        "email": { "type": "string", "description": "User email address" },
+        "level": { "type": "integer", "description": "User level" },
+        "wins": { "type": "integer", "description": "User wins count" },
+        "kd": { "type": "number", "description": "User kill-death ratio" },
+        "avatar": { "type": "string", "description": "User avatar URL" },
+        "joinedTournaments": { "type": "array", "description": "Array list of joined tournament IDs" },
+        "joinedScrims": { "type": "array", "description": "Array list of joined scrim IDs" },
+        "achievements": { "type": "array", "description": "Locked and unlocked system achievements" },
+        "isAdmin": { "type": "boolean", "description": "Administrative authority permission level" }
+      },
+      "required": ["uid", "username", "email", "level", "wins", "kd", "avatar", "joinedTournaments", "joinedScrims", "achievements"]
+    },
+    "WinnerRecord": {
+      "title": "WinnerRecord",
+      "description": "Historical tournament runner and grand champion logs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique winner document key" },
+        "tournamentName": { "type": "string", "description": "Name of the championship" },
+        "category": { "type": "string", "enum": ["championship", "pro", "elite", "cup"], "description": "Category index tag" },
+        "prizeWon": { "type": "string", "description": "Prize money description text" },
+        "completionDate": { "type": "string", "description": "Launch or completion calendar date label" },
+        "championTeam": { "type": "string", "description": "Top standing clan title string" },
+        "runnerUpTeam": { "type": "string", "description": "Runner up clan title string" },
+        "teamLogoEmoji": { "type": "string", "description": "Representational character badge" },
+        "championRoster": { "type": "array", "description": "Comma divided list of key active players" },
+        "mvpPlayer": { "type": "string", "description": "MVP outstanding player" },
+        "mvpKills": { "type": "integer", "description": "Total registered tournament MVP kills" }
+      },
+      "required": ["id", "tournamentName", "category", "prizeWon", "completionDate", "championTeam", "runnerUpTeam", "teamLogoEmoji", "championRoster", "mvpPlayer", "mvpKills"]
+    }
+  },
+  "firestore": {
+    "/tournaments/{tournamentId}": {
+      "schema": "Tournament",
+      "description": "Collection of gaming tournaments"
+    },
+    "/scrims/{scrimId}": {
+      "schema": "Scrim",
+      "description": "Collection of available practice scrim logs"
+    },
+    "/streams/{streamId}": {
+      "schema": "Stream",
+      "description": "Collection of approved live YouTube transmission keys"
+    },
+    "/announcements/{announcementId}": {
+      "schema": "Announcement",
+      "description": "Collection of system notices, rules, and outcomes"
+    },
+    "/winners/{winnerId}": {
+      "schema": "WinnerRecord",
+      "description": "Historical lists of verified completed champions"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profiles containing achievements and registered events"
+    }
+  }
+}
